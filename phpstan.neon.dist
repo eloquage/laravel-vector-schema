@@ -19,5 +19,3 @@ parameters:
     excludePaths:
         analyse:
             - tests/Pest.php
-    peststan:
-        testCaseClass: IllumaLaw\VectorSchema\Tests\TestCase

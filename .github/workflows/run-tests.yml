@@ -33,7 +33,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-latest]
-        php: [8.5, 8.4, 8.3]
+        php: [8.5, 8.4]
         laravel: [13.*]
         database: [sqlite, pgsql, mysql, mariadb]
         stability: [prefer-stable]
@@ -47,8 +47,6 @@ jobs:
             database: sqlite
             os: ubuntu-latest
         exclude:
-          - php: 8.3
-            laravel: 13.*
 
     name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.database }} - ${{ matrix.os }}
 
