@@ -6,7 +6,7 @@
         "laravel",
         "laravel-vector-schema"
     ],
-    "homepage": "https://github.com/illuma-law/laravel-vector-schema",
+    "homepage": "https://github.com/eloquage/laravel-vector-schema",
     "license": "MIT",
     "authors": [
         {

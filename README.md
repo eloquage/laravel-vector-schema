@@ -1,6 +1,6 @@
 # Laravel Vector Schema
 
-[![Tests](https://github.com/illuma-law/laravel-vector-schema/actions/workflows/run-tests.yml/badge.svg)](https://github.com/illuma-law/laravel-vector-schema/actions)
+[![Tests](https://github.com/eloquage/laravel-vector-schema/actions/workflows/run-tests.yml/badge.svg)](https://github.com/eloquage/laravel-vector-schema/actions)
 [![Packagist License](https://img.shields.io/badge/Licence-MIT-blue)](http://choosealicense.com/licenses/mit/)
 [![Latest Stable Version](https://img.shields.io/packagist/v/illuma-law/laravel-vector-schema?label=Version)](https://packagist.org/packages/illuma-law/laravel-vector-schema)
 
