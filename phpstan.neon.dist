@@ -16,3 +16,8 @@ parameters:
         -
             message: '#Access to an undefined property Pest\\PendingCalls\\TestCall::\$processor#'
             path: tests/VectorProcessorTest.php
+    excludePaths:
+        analyse:
+            - tests/Pest.php
+    peststan:
+        testCaseClass: IllumaLaw\VectorSchema\Tests\TestCase
