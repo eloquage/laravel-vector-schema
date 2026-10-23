@@ -112,4 +112,5 @@ jobs:
         run: vendor/bin/pest --ci
         env:
           DB_CONNECTION: ${{ matrix.database }}
+          DB_DATABASE: ${{ matrix.database == 'sqlite' && ':memory:' || 'testing' }}
           DB_PASSWORD: password
