@@ -17,20 +17,20 @@ namespace Illuminate\Database\Schema {
 
 namespace Illuminate\Database\Query {
     /**
-     * @method $this selectHybridVectorDistance(string $column, array $vector, ?string $as = null) Select the cosine distance between a vector column and a given vector array. Supports PostgreSQL, MySQL, MariaDB, SQL Server, SingleStore, and SQLite.
-     * @method $this whereHybridVectorSimilarTo(string $column, array $vector, float $minSimilarity = 0.6, bool $order = true) Filter results by vector similarity. Supports PostgreSQL, MySQL, MariaDB, SQL Server, SingleStore, and SQLite.
-     * @method $this whereHybridVectorDistanceLessThan(string $column, array $vector, float $maxDistance, string $boolean = 'and') Filter results by maximum cosine distance. Supports PostgreSQL, MySQL, MariaDB, SQL Server, SingleStore, and SQLite.
-     * @method $this orderByHybridVectorDistance(string $column, array $vector, string $direction = 'asc') Order results by distance to a given vector array. Supports PostgreSQL, MySQL, MariaDB, SQL Server, SingleStore, and SQLite.
+     * @method $this selectHybridVectorDistance(string $column, array<int, float> $vector, ?string $as = null) Select the cosine distance between a vector column and a given vector array. Supports PostgreSQL, MySQL, MariaDB, SQL Server, SingleStore, and SQLite.
+     * @method $this whereHybridVectorSimilarTo(string $column, array<int, float> $vector, float $minSimilarity = 0.6, bool $order = true) Filter results by vector similarity. Supports PostgreSQL, MySQL, MariaDB, SQL Server, SingleStore, and SQLite.
+     * @method $this whereHybridVectorDistanceLessThan(string $column, array<int, float> $vector, float $maxDistance, string $boolean = 'and') Filter results by maximum cosine distance. Supports PostgreSQL, MySQL, MariaDB, SQL Server, SingleStore, and SQLite.
+     * @method $this orderByHybridVectorDistance(string $column, array<int, float> $vector, string $direction = 'asc') Order results by distance to a given vector array. Supports PostgreSQL, MySQL, MariaDB, SQL Server, SingleStore, and SQLite.
      */
     class Builder {}
 }
 
 namespace Illuminate\Database\Eloquent {
     /**
-     * @method $this selectHybridVectorDistance(string $column, array $vector, ?string $as = null) Select the cosine distance between a vector column and a given vector array.
-     * @method $this whereHybridVectorSimilarTo(string $column, array $vector, float $minSimilarity = 0.6, bool $order = true) Filter results by vector similarity.
-     * @method $this whereHybridVectorDistanceLessThan(string $column, array $vector, float $maxDistance, string $boolean = 'and') Filter results by maximum cosine distance.
-     * @method $this orderByHybridVectorDistance(string $column, array $vector, string $direction = 'asc') Order results by distance to a given vector array.
+     * @method $this selectHybridVectorDistance(string $column, array<int, float> $vector, ?string $as = null) Select the cosine distance between a vector column and a given vector array.
+     * @method $this whereHybridVectorSimilarTo(string $column, array<int, float> $vector, float $minSimilarity = 0.6, bool $order = true) Filter results by vector similarity.
+     * @method $this whereHybridVectorDistanceLessThan(string $column, array<int, float> $vector, float $maxDistance, string $boolean = 'and') Filter results by maximum cosine distance.
+     * @method $this orderByHybridVectorDistance(string $column, array<int, float> $vector, string $direction = 'asc') Order results by distance to a given vector array.
      */
     class Builder {}
 }

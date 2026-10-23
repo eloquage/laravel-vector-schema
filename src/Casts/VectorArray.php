@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
 /**
- * @implements CastsAttributes<array<int, float>|null, array<int, float>|null>
+ * @implements CastsAttributes<array<int, float>|null, mixed>
  */
 class VectorArray implements CastsAttributes
 {
