@@ -9,6 +9,7 @@ parameters:
     excludePaths:
         analyse:
             - tests/ArchTest.php
+            - tests/Pest.php
     tmpDir: build/phpstan
     checkOctaneCompatibility: true
     checkModelProperties: true
@@ -17,6 +18,5 @@ parameters:
         -
             message: '#Access to an undefined property Pest\\PendingCalls\\TestCall::\$processor#'
             path: tests/VectorProcessorTest.php
-            - tests/Pest.php
     peststan:
         testCaseClass: IllumaLaw\VectorSchema\Tests\TestCase
