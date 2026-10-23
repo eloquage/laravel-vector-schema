@@ -6,6 +6,8 @@ use IllumaLaw\VectorSchema\Casts\VectorArray;
 use IllumaLaw\VectorSchema\VectorHelper;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Expression;
+use Illuminate\Support\Facades\DB;
 
 class TestVectorModel extends Model
 {
@@ -142,20 +144,23 @@ it('returns postgres literal for pgsql driver in set', function () {
     expect($result)->toBe(VectorHelper::toPostgresLiteral($vector));
 });
 
-it('returns json for mysql and other drivers in set', function () {
+it('converts vectors using each native driver function when setting a cast', function (string $driver, string $expectedSql) {
     $cast = new VectorArray;
-    $drivers = ['mysql', 'mariadb', 'sqlsrv', 'singlestore'];
+    $model = new TestVectorModel;
+    $model->setTestDriver($driver);
 
-    foreach ($drivers as $driver) {
-        $model = new TestVectorModel;
-        $model->setTestDriver($driver);
-
-        $vector = [1.0, 2.0];
-        $result = $cast->set($model, 'embedding', $vector, []);
-
-        expect($result)->toBe(json_encode($vector));
+    $result = $cast->set($model, 'embedding', [1.0, 2.0], []);
+    if (! $result instanceof Expression) {
+        throw new RuntimeException('The cast must return a driver expression.');
     }
-});
+
+    expect($result->getValue(DB::connection()->getQueryGrammar()))->toBe($expectedSql);
+})->with([
+    ['mysql', "STRING_TO_VECTOR('[1,2]')"],
+    ['mariadb', "VEC_FromText('[1,2]')"],
+    ['sqlsrv', "CAST('[1,2]' AS VECTOR(2))"],
+    ['singlestore', "JSON_ARRAY_PACK('[1,2]')"],
+]);
 
 it('returns raw array for unknown drivers in set', function () {
     $cast = new VectorArray;
