@@ -1,6 +1,6 @@
 {
     "name": "illuma-law/laravel-vector-schema",
-    "description": "Portable Eloquent casts and Blueprint schema macros for pgvector and sqlite-vec.",
+    "description": "Portable Laravel vector schema, casts, and cosine similarity queries.",
     "keywords": [
         "illuma-law",
         "laravel",

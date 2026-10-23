@@ -7,6 +7,7 @@ namespace IllumaLaw\VectorSchema\Casts;
 use IllumaLaw\VectorSchema\VectorHelper;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Expression;
 use InvalidArgumentException;
 
 /**
@@ -101,8 +102,20 @@ class VectorArray implements CastsAttributes
             return VectorHelper::toPostgresLiteral($vector);
         }
 
-        if (in_array($driver, ['mysql', 'mariadb', 'sqlsrv', 'singlestore'])) {
-            return json_encode($vector);
+        if ($driver === 'mysql') {
+            return new Expression('STRING_TO_VECTOR('.self::vectorLiteral($vector).')');
+        }
+
+        if ($driver === 'mariadb') {
+            return new Expression('VEC_FromText('.self::vectorLiteral($vector).')');
+        }
+
+        if ($driver === 'sqlsrv') {
+            return new Expression('CAST('.self::vectorLiteral($vector).' AS VECTOR('.count($vector).'))');
+        }
+
+        if ($driver === 'singlestore') {
+            return new Expression('JSON_ARRAY_PACK('.self::vectorLiteral($vector).')');
         }
 
         return $vector;
@@ -118,5 +131,17 @@ class VectorArray implements CastsAttributes
             fn ($v) => is_numeric($v) ? (float) $v : 0.0,
             $vector
         ));
+    }
+
+    /**
+     * The validated vector is encoded as numeric JSON, so it can safely be
+     * embedded as a SQL string literal for engines that require conversion
+     * functions around vector values.
+     *
+     * @param  array<int, float>  $vector
+     */
+    private static function vectorLiteral(array $vector): string
+    {
+        return "'".json_encode($vector, JSON_THROW_ON_ERROR)."'";
     }
 }

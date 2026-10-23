@@ -148,11 +148,12 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
                 if ($driver === 'sqlsrv') {
                     $grammar = $this->getGrammar();
+                    $vectorType = 'CAST(? AS VECTOR('.count($vector).'))';
 
                     $this->addBinding(json_encode($vector, JSON_THROW_ON_ERROR), 'select');
                     /** @var Builder $res */
                     $res = $this->addSelect([
-                        $this->raw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, ?) as {$grammar->wrap($alias)}"),
+                        $this->raw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, {$vectorType}) as {$grammar->wrap($alias)}"),
                     ]);
 
                     return $res;
@@ -160,11 +161,17 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
                 if ($driver === 'singlestore') {
                     $grammar = $this->getGrammar();
+                    $queryVector = 'JSON_ARRAY_PACK(?)';
+                    $dotProduct = "DOT_PRODUCT({$grammar->wrap($column)}, {$queryVector})";
+                    $queryMagnitude = "SQRT(DOT_PRODUCT({$queryVector}, {$queryVector}))";
+                    $columnMagnitude = "SQRT(DOT_PRODUCT({$grammar->wrap($column)}, {$grammar->wrap($column)}))";
 
+                    $this->addBinding(json_encode($vector, JSON_THROW_ON_ERROR), 'select');
+                    $this->addBinding(json_encode($vector, JSON_THROW_ON_ERROR), 'select');
                     $this->addBinding(json_encode($vector, JSON_THROW_ON_ERROR), 'select');
                     /** @var Builder $res */
                     $res = $this->addSelect([
-                        $this->raw("1 - DOT_PRODUCT({$grammar->wrap($column)}, JSON_ARRAY_PACK(?)) as {$grammar->wrap($alias)}"),
+                        $this->raw("1 - ({$dotProduct} / ({$columnMagnitude} * {$queryMagnitude})) as {$grammar->wrap($alias)}"),
                     ]);
 
                     return $res;
@@ -230,7 +237,7 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
 
                 if ($driver === 'sqlite') {
                     $vectorBlob = VectorHelper::toBlob($vector);
-                    $this->whereRaw("vec_distance_cosine({$grammar->wrap($column)}, ?) <= ?", [$vectorBlob, $maxDistance]);
+                    $this->whereRaw("vec_distance_cosine({$grammar->wrap($column)}, ?) <= CAST(? AS REAL)", [$vectorBlob, $maxDistance]);
                     if ($order) {
                         $this->orderByRaw("vec_distance_cosine({$grammar->wrap($column)}, ?)", [$vectorBlob]);
                     }
@@ -257,18 +264,25 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
                 }
 
                 if ($driver === 'sqlsrv') {
-                    $this->whereRaw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, ?) <= ?", [json_encode($vector, JSON_THROW_ON_ERROR), $maxDistance]);
+                    $vectorType = 'CAST(? AS VECTOR('.count($vector).'))';
+                    $this->whereRaw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, {$vectorType}) <= ?", [json_encode($vector, JSON_THROW_ON_ERROR), $maxDistance]);
                     if ($order) {
-                        $this->orderByRaw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, ?)", [json_encode($vector, JSON_THROW_ON_ERROR)]);
+                        $this->orderByRaw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, {$vectorType})", [json_encode($vector, JSON_THROW_ON_ERROR)]);
                     }
 
                     return $this;
                 }
 
                 if ($driver === 'singlestore') {
-                    $this->whereRaw("DOT_PRODUCT({$grammar->wrap($column)}, JSON_ARRAY_PACK(?)) >= ?", [json_encode($vector, JSON_THROW_ON_ERROR), $minSimilarity]);
+                    $queryVector = 'JSON_ARRAY_PACK(?)';
+                    $dotProduct = "DOT_PRODUCT({$grammar->wrap($column)}, {$queryVector})";
+                    $queryMagnitude = "SQRT(DOT_PRODUCT({$queryVector}, {$queryVector}))";
+                    $columnMagnitude = "SQRT(DOT_PRODUCT({$grammar->wrap($column)}, {$grammar->wrap($column)}))";
+                    $cosineSimilarity = "({$dotProduct} / ({$columnMagnitude} * {$queryMagnitude}))";
+                    $jsonVector = json_encode($vector, JSON_THROW_ON_ERROR);
+                    $this->whereRaw("{$cosineSimilarity} >= ?", [$jsonVector, $jsonVector, $jsonVector, $minSimilarity]);
                     if ($order) {
-                        $this->orderByRaw("DOT_PRODUCT({$grammar->wrap($column)}, JSON_ARRAY_PACK(?)) DESC", [json_encode($vector, JSON_THROW_ON_ERROR)]);
+                        $this->orderByRaw($cosineSimilarity.' DESC', [$jsonVector, $jsonVector, $jsonVector]);
                     }
 
                     return $this;
@@ -301,7 +315,7 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
                     $vectorBlob = VectorHelper::toBlob($vector);
 
                     /** @var Builder $res */
-                    $res = $this->{$method}("vec_distance_cosine({$grammar->wrap($column)}, ?) < ?", [$vectorBlob, $maxDistance]);
+                    $res = $this->{$method}("vec_distance_cosine({$grammar->wrap($column)}, ?) < CAST(? AS REAL)", [$vectorBlob, $maxDistance]);
 
                     return $res;
                 }
@@ -321,15 +335,22 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
                 }
 
                 if ($driver === 'sqlsrv') {
+                    $vectorType = 'CAST(? AS VECTOR('.count($vector).'))';
                     /** @var Builder $res */
-                    $res = $this->{$method}("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, ?) < ?", [json_encode($vector, JSON_THROW_ON_ERROR), $maxDistance]);
+                    $res = $this->{$method}("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, {$vectorType}) < ?", [json_encode($vector, JSON_THROW_ON_ERROR), $maxDistance]);
 
                     return $res;
                 }
 
                 if ($driver === 'singlestore') {
+                    $queryVector = 'JSON_ARRAY_PACK(?)';
+                    $dotProduct = "DOT_PRODUCT({$grammar->wrap($column)}, {$queryVector})";
+                    $queryMagnitude = "SQRT(DOT_PRODUCT({$queryVector}, {$queryVector}))";
+                    $columnMagnitude = "SQRT(DOT_PRODUCT({$grammar->wrap($column)}, {$grammar->wrap($column)}))";
+                    $cosineDistance = "1 - ({$dotProduct} / ({$columnMagnitude} * {$queryMagnitude}))";
+                    $jsonVector = json_encode($vector, JSON_THROW_ON_ERROR);
                     /** @var Builder $res */
-                    $res = $this->{$method}("1 - DOT_PRODUCT({$grammar->wrap($column)}, JSON_ARRAY_PACK(?)) < ?", [json_encode($vector, JSON_THROW_ON_ERROR), $maxDistance]);
+                    $res = $this->{$method}("{$cosineDistance} < ?", [$jsonVector, $jsonVector, $jsonVector, $maxDistance]);
 
                     return $res;
                 }
@@ -380,17 +401,26 @@ class VectorSchemaServiceProvider extends PackageServiceProvider
                 }
 
                 if ($driver === 'sqlsrv') {
+                    $vectorType = 'CAST(? AS VECTOR('.count($vector).'))';
                     /** @var Builder $res */
-                    $res = $this->orderByRaw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, ?)".$dir, [json_encode($vector, JSON_THROW_ON_ERROR)]);
+                    $res = $this->orderByRaw("VECTOR_DISTANCE('cosine', {$grammar->wrap($column)}, {$vectorType})".$dir, [json_encode($vector, JSON_THROW_ON_ERROR)]);
 
                     return $res;
                 }
 
                 if ($driver === 'singlestore') {
-                    $singlestoreDir = $direction === 'desc' ? ' ASC' : ' DESC';
+                    $queryVector = 'JSON_ARRAY_PACK(?)';
+                    $dotProduct = "DOT_PRODUCT({$grammar->wrap($column)}, {$queryVector})";
+                    $queryMagnitude = "SQRT(DOT_PRODUCT({$queryVector}, {$queryVector}))";
+                    $columnMagnitude = "SQRT(DOT_PRODUCT({$grammar->wrap($column)}, {$grammar->wrap($column)}))";
+                    $cosineDistance = "1 - ({$dotProduct} / ({$columnMagnitude} * {$queryMagnitude}))";
 
                     /** @var Builder $res */
-                    $res = $this->orderByRaw("DOT_PRODUCT({$grammar->wrap($column)}, JSON_ARRAY_PACK(?))".$singlestoreDir, [json_encode($vector, JSON_THROW_ON_ERROR)]);
+                    $res = $this->orderByRaw($cosineDistance.$dir, [
+                        json_encode($vector, JSON_THROW_ON_ERROR),
+                        json_encode($vector, JSON_THROW_ON_ERROR),
+                        json_encode($vector, JSON_THROW_ON_ERROR),
+                    ]);
 
                     return $res;
                 }

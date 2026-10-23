@@ -1,99 +1,64 @@
 # Laravel Vector Schema
 
 [![Tests](https://github.com/eloquage/laravel-vector-schema/actions/workflows/run-tests.yml/badge.svg)](https://github.com/eloquage/laravel-vector-schema/actions)
-[![Packagist License](https://img.shields.io/badge/Licence-MIT-blue)](http://choosealicense.com/licenses/mit/)
 [![Latest Stable Version](https://img.shields.io/packagist/v/illuma-law/laravel-vector-schema?label=Version)](https://packagist.org/packages/illuma-law/laravel-vector-schema)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
 
-Portable vector columns and search macros for Laravel Eloquent.
+![Colored vector embeddings flowing through a schema-aware database query](docs/images/vector-schema-banner.png)
 
-When building AI applications with RAG (Retrieval-Augmented Generation), you must store and query high-dimensional vector embeddings. However, PostgreSQL (`pgvector`), SQLite (`sqlite-vec`), SingleStore, and MySQL all use different syntax for vector data types, index creation, and cosine distance calculations.
+Portable vector columns, casts, and similarity queries for Laravel.
 
-This package provides Laravel Blueprint schema macros and Eloquent Builder macros to seamlessly abstract away these database differences, giving you a unified API for vector search across all supported databases.
+## Requirements
 
-## Features
+- PHP 8.3 or later
+- Laravel 11, 12, or 13
+- A supported database with its vector features enabled
 
-- **Database Portability:** Write your migrations and vector queries once; the package compiles them to the correct syntax for your active database connection.
-- **SQLite Binary Support:** Safely handles the complex float32 `BLOB` packing required by `sqlite-vec` while using native `vector` column types on Postgres/MySQL.
-- **HNSW Index Support:** Provides a macro for creating high-performance Approximate Nearest Neighbor (ANN) indexes.
-- **Cosine Similarity:** Provides fluent query macros to filter, sort, and select based on vector cosine similarity and distance.
-- **Eloquent Cast:** Automatically serializes and deserializes PHP arrays to the correct database vector format.
+| Database | Vector storage and distance support | Notes |
+| --- | --- | --- |
+| PostgreSQL | `vector` and pgvector cosine distance | Install the pgvector extension. |
+| MySQL 9.0+ | Native `VECTOR` and [`VECTOR_DISTANCE`](https://dev.mysql.com/doc/refman/9.7/en/vector-functions.html) | Distance functions require MySQL HeatWave on OCI or MySQL AI. |
+| MariaDB 11.7+ | Native `VECTOR` and [`VEC_DISTANCE_COSINE`](https://mariadb.com/docs/server/reference/sql-functions/vector-functions/vec_distance_cosine) | Uses MariaDB's vector functions. |
+| SQL Server 2025 / Azure SQL | Native `VECTOR` and [`VECTOR_DISTANCE`](https://learn.microsoft.com/en-us/sql/t-sql/functions/vector-distance-transact-sql?view=sql-server-ver17) | Vector support depends on the server edition and update policy. |
+| SingleStore | Vector values and [`DOT_PRODUCT`](https://docs.singlestore.com/db/v9.1/reference/sql-reference/vector-functions/dot-product/) | Cosine similarity is computed from dot products and vector magnitudes. |
+| SQLite | BLOB storage and [`vec_distance_cosine`](https://github.com/asg017/sqlite-vec) | Load the `sqlite-vec` extension on each connection. |
 
-## Database Support Matrix
+CI exercises vector columns and queries on SQLite, PostgreSQL, and MariaDB. Its MySQL Community job verifies vector storage and casts; MySQL distance functions require HeatWave on OCI or MySQL AI. SQL Server and SingleStore are covered by SQL-generation and cast-expression tests, not live database integration tests.
 
-| Database | Support Level | Requirements | Distance Function |
-| :--- | :--- | :--- | :--- |
-| **PostgreSQL** | Native | `pgvector` extension | `<=>` (Cosine) |
-| **MySQL (9.0+)** | Native | HeatWave or Enterprise Edition | `VECTOR_DISTANCE` |
-| **MariaDB (11.7+)** | Native | None | `VEC_DISTANCE_COSINE` |
-| **SQL Server** | Native | Azure SQL (Preview) | `VECTOR_DISTANCE` |
-| **SingleStore** | Native | None | `DOT_PRODUCT` |
-| **SQLite** | Native | `sqlite-vec` extension | `vec_distance_cosine` |
-
-*Note: MySQL Community Edition (GPL) currently restricts the `VECTOR_DISTANCE` function to HeatWave/Enterprise users. SQLite requires loading the `sqlite-vec` extension.*
-
-## Installation
-
-You can install the package via composer:
+## Install
 
 ```bash
 composer require illuma-law/laravel-vector-schema
 ```
 
-The Service Provider will automatically register the `Blueprint` and `Builder` macros.
+Laravel discovers the service provider automatically. It registers the `vectorColumn`, `hnswIndex`, and `dropHnswIndex` schema macros and the vector query macros.
 
-## Usage & Integration
+## Define a vector column
 
-### Schema Migrations
-
-Use the `vectorColumn` macro to define portable vector columns. On PostgreSQL, MySQL, MariaDB, SQL Server, and SingleStore, this creates a native `vector` column. On SQLite, it safely falls back to a `BLOB` column compatible with `sqlite-vec`.
-
-Use `hnswIndex` for high-performance approximate nearest neighbor (ANN) similarity search. This generates a native HNSW index on PostgreSQL and is gracefully ignored on other drivers.
+Use `vectorColumn` in a migration. Pass the vector dimension required by your embedding model.
 
 ```php
-use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use IllumaLaw\VectorSchema\VectorSchema;
 
-return new class extends Migration {
-    public function up(): void
-    {
-        // Ensures the pgvector extension is created on PostgreSQL databases
-        VectorSchema::ensureExtension();
+VectorSchema::ensureExtension(); // Creates pgvector when using PostgreSQL.
 
-        Schema::create('documents', function (Blueprint $table) {
-            $table->id();
-            $table->text('content');
-            
-            // Define 'embedding' column with 768 dimensions
-            $table->vectorColumn('embedding', 768)->nullable();
-            
-            $table->timestamps();
-        });
+Schema::create('documents', function (Blueprint $table): void {
+    $table->id();
+    $table->text('content');
+    $table->vectorColumn('embedding', 3)->nullable();
+    $table->timestamps();
+});
 
-        // Creates an HNSW index on pgsql (ignored on others)
-        Schema::table('documents', function (Blueprint $table) {
-            $table->hnswIndex('embedding');
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::table('documents', function (Blueprint $table) {
-            $table->dropHnswIndex('embedding');
-        });
-        Schema::dropIfExists('documents');
-    }
-};
+Schema::table('documents', function (Blueprint $table): void {
+    $table->hnswIndex('embedding'); // PostgreSQL only; ignored by other drivers.
+});
 ```
 
-### Eloquent Casts
-
-Add the `VectorArray` cast to your Eloquent model. This handles the serialization and deserialization of plain PHP arrays into the specific formats required by your active database driver.
+## Cast vectors to PHP arrays
 
 ```php
-namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
 use IllumaLaw\VectorSchema\Casts\VectorArray;
 
@@ -103,122 +68,37 @@ class Document extends Model
         'embedding' => VectorArray::class,
     ];
 }
-```
 
-Now you can interact with the vector just like a normal array:
-
-```php
-$document = new Document();
-$document->content = 'Hello world';
-$document->embedding = [0.1, 0.5, -0.3, ...]; // Will be cast correctly on save
+$document = new Document;
+$document->content = 'A short example';
+$document->embedding = [0.1, 0.5, -0.3];
 $document->save();
 ```
 
-### Vector Math Utilities (`VectorProcessor`)
-
-When dealing with high-dimensional vectors, you often need to perform common mathematical operations such as normalizing input data or averaging several vectors (e.g., to create a centroid for a cluster or a search query).
-
-The package includes a domain-agnostic `VectorProcessor` class for these tasks.
-
-#### `normalizeVector`
-
-Ensures an input vector is a flat list of floats, filters out `NaN` or `INF` values, and validates the expected dimensionality. Returns an empty array if the input is invalid.
+## Search by cosine similarity
 
 ```php
-use IllumaLaw\VectorSchema\Support\VectorProcessor;
+$queryVector = [0.1, 0.5, -0.3];
 
-$processor = new VectorProcessor();
-
-// Returns a list<float> of length 3
-$normalized = $processor->normalizeVector([0.5, '1.5', 2], expectedDimensions: 3);
-
-if ($normalized === []) {
-    // Handle invalid input or dimension mismatch
-}
-```
-
-#### `averageVectors`
-
-Computes the mathematical average (centroid) of a collection of vectors. This is useful for combining multiple embeddings into a single query vector.
-
-```php
-$processor = new VectorProcessor();
-
-$vectors = [
-    [1.0, 1.0, 1.0],
-    [3.0, 3.0, 3.0],
-    [NAN, 0.0, 0.0], // Automatically filtered out
-];
-
-// Returns [2.0, 2.0, 2.0]
-$centroid = $processor->averageVectors($vectors, expectedDimensions: 3);
-```
-
-### Vector Querying (Semantic Search)
-
-The package provides several macros attached to the Laravel Query Builder.
-
-#### `whereHybridVectorSimilarTo`
-
-Filter results to only include those that meet a minimum cosine similarity threshold. You can also ask the macro to automatically order the results by similarity (closest first).
-
-```php
-// Assuming $queryEmbedding is an array of 768 floats from your Embedding model (e.g., OpenAI)
-$queryEmbedding = [...]; 
-
-$results = Document::query()
+$documents = Document::query()
     ->whereHybridVectorSimilarTo(
-        column: 'embedding', 
-        vector: $queryEmbedding, 
-        minSimilarity: 0.7, 
-        order: true // Automatically order by the closest match
+        column: 'embedding',
+        vector: $queryVector,
+        minSimilarity: 0.7,
     )
-    ->take(10)
+    ->limit(10)
     ->get();
 ```
 
-#### `selectHybridVectorDistance`
+Other query macros are `selectHybridVectorDistance`, `whereHybridVectorDistanceLessThan`, and `orderByHybridVectorDistance`. Distances sort ascending for nearest-first results.
 
-Select the raw cosine distance between a stored vector and your query vector into a dynamically named alias. Note that distance is the inverse of similarity (0.0 is an exact match).
-
-```php
-$results = Document::query()
-    ->select('id', 'content')
-    ->selectHybridVectorDistance('embedding', $queryEmbedding, as: 'distance')
-    ->orderBy('distance', 'asc') // Closest first
-    ->get();
-
-echo $results->first()->distance;
-```
-
-#### `whereHybridVectorDistanceLessThan`
-
-If you prefer thinking in distances rather than similarities, directly filter by the raw distance.
-
-```php
-$results = Document::query()
-    ->whereHybridVectorDistanceLessThan('embedding', $queryEmbedding, maxDistance: 0.3)
-    ->get();
-```
-
-#### `orderByHybridVectorDistance`
-
-If you only need to order results by semantic proximity without filtering or selecting the specific distance value:
-
-```php
-$results = Document::query()
-    ->orderByHybridVectorDistance('embedding', $queryEmbedding, 'asc')
-    ->get();
-```
-
-## Testing
-
-The package includes a comprehensive test suite using Pest.
+## Run tests
 
 ```bash
+composer install
 composer test
+composer analyse
+composer format -- --test
 ```
 
-## License
-
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+See the [changelog](CHANGELOG.md) for release notes.
