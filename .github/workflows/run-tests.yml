@@ -46,7 +46,6 @@ jobs:
             stability: prefer-stable
             database: sqlite
             os: ubuntu-latest
-        exclude:
 
     name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.database }} - ${{ matrix.os }}
 
