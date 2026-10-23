@@ -12,17 +12,26 @@ class TestVectorModel extends Model
     protected $casts = [
         'embedding' => VectorArray::class,
     ];
+
+    private string $testDriver = 'sqlite';
+
+    public function setTestDriver(string $driver): void
+    {
+        $this->testDriver = $driver;
+    }
+
+    public function getConnection(): Connection
+    {
+        return new Connection(new PDO('sqlite::memory:'), 'testing', '', ['driver' => $this->testDriver]);
+    }
 }
 
 it('can cast a vector array to a blob for sqlite', function () {
-    $model = new TestVectorModel;
     $vector = [1.0, 2.0, 3.0];
 
     $cast = new VectorArray;
-    $model = Mockery::mock(TestVectorModel::class)->makePartial();
-    $connection = Mockery::mock(Connection::class);
-    $connection->shouldReceive('getDriverName')->andReturn('sqlite');
-    $model->shouldReceive('getConnection')->andReturn($connection);
+    $model = new TestVectorModel;
+    $model->setTestDriver('sqlite');
 
     $result = $cast->set($model, 'embedding', $vector, []);
 
@@ -124,10 +133,8 @@ it('throws exception for non-array value in set', function () {
 
 it('returns postgres literal for pgsql driver in set', function () {
     $cast = new VectorArray;
-    $model = Mockery::mock(TestVectorModel::class)->makePartial();
-    $connection = Mockery::mock(Connection::class);
-    $connection->shouldReceive('getDriverName')->andReturn('pgsql');
-    $model->shouldReceive('getConnection')->andReturn($connection);
+    $model = new TestVectorModel;
+    $model->setTestDriver('pgsql');
 
     $vector = [1.0, 2.0];
     $result = $cast->set($model, 'embedding', $vector, []);
@@ -140,10 +147,8 @@ it('returns json for mysql and other drivers in set', function () {
     $drivers = ['mysql', 'mariadb', 'sqlsrv', 'singlestore'];
 
     foreach ($drivers as $driver) {
-        $model = Mockery::mock(TestVectorModel::class)->makePartial();
-        $connection = Mockery::mock(Connection::class);
-        $connection->shouldReceive('getDriverName')->andReturn($driver);
-        $model->shouldReceive('getConnection')->andReturn($connection);
+        $model = new TestVectorModel;
+        $model->setTestDriver($driver);
 
         $vector = [1.0, 2.0];
         $result = $cast->set($model, 'embedding', $vector, []);
@@ -154,10 +159,8 @@ it('returns json for mysql and other drivers in set', function () {
 
 it('returns raw array for unknown drivers in set', function () {
     $cast = new VectorArray;
-    $model = Mockery::mock(TestVectorModel::class)->makePartial();
-    $connection = Mockery::mock(Connection::class);
-    $connection->shouldReceive('getDriverName')->andReturn('unknown');
-    $model->shouldReceive('getConnection')->andReturn($connection);
+    $model = new TestVectorModel;
+    $model->setTestDriver('unknown');
 
     $vector = [1.0, 2.0];
     $result = $cast->set($model, 'embedding', $vector, []);

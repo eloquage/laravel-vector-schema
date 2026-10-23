@@ -6,8 +6,11 @@ parameters:
     paths:
         - src
         - tests
+    stubFiles:
+        - phpstan/IDEHelper.stub
     excludePaths:
-        analyse:
+        analyseAndScan:
+            - src/IDEHelper.php
             - tests/ArchTest.php
             - tests/Pest.php
     tmpDir: build/phpstan

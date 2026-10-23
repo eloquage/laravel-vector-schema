@@ -1,0 +1,10 @@
+<?php
+
+namespace Illuminate\Database\Schema;
+
+/**
+ * @method mixed vectorColumn(string $column, int $dimensions)
+ * @method void hnswIndex(string $column, int $m = 16, int $efConstruction = 64)
+ * @method void dropHnswIndex(string $column)
+ */
+class Blueprint {}
