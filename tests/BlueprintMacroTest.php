@@ -17,6 +17,10 @@ it('registers the vectorColumn macro on blueprint', function () {
 });
 
 it('can create a vector column in a migration on sqlite', function () {
+    Config::set('database.default', 'sqlite');
+    Config::set('database.connections.sqlite.database', ':memory:');
+    DB::purge('sqlite');
+
     Schema::create('test_vectors_sqlite', function (Blueprint $table) {
         $table->id();
         $table->vectorColumn('embedding', 1536);
@@ -65,13 +69,21 @@ it('uses vector type for singlestore', function () {
 });
 
 it('can call hnswIndex macro', function () {
+    if (Schema::hasTable('test_hnsw')) {
+        Schema::drop('test_hnsw');
+    }
+
     Schema::create('test_hnsw', function (Blueprint $table) {
         $table->id();
         $table->vectorColumn('embedding', 3);
+    });
+
+    // HNSW indexes are separate PostgreSQL statements and require the table to exist first.
+    Schema::table('test_hnsw', function (Blueprint $table) {
         $table->hnswIndex('embedding');
     });
 
-    expect(true)->toBe(true);
+    expect(Schema::hasTable('test_hnsw'))->toBeTrue();
 });
 
 it('can call dropHnswIndex macro', function () {

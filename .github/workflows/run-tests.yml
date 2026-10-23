@@ -108,6 +108,12 @@ jobs:
       - name: List Installed Dependencies
         run: composer show -D
 
+      - name: Enable pgvector extension
+        if: matrix.database == 'pgsql'
+        env:
+          PGPASSWORD: password
+        run: psql --host 127.0.0.1 --username postgres --dbname testing --command 'CREATE EXTENSION IF NOT EXISTS vector'
+
       - name: Execute tests
         run: vendor/bin/pest --ci
         env:
