@@ -41,7 +41,7 @@ it('creates hnsw index on postgres', function () {
     DB::shouldReceive('connection')->andReturn($connection);
     DB::shouldReceive('getDefaultConnection')->andReturn('pgsql');
 
-    DB::shouldReceive('statement')->once()->with(Mockery::on(function ($sql) {
+    DB::shouldReceive('statement')->once()->with(Mockery::on(function (string $sql): bool {
         return str_contains($sql, 'CREATE INDEX test_table_embedding_hnsw_index ON test_table USING hnsw');
     }));
 
@@ -55,7 +55,7 @@ it('does not create hnsw index on other drivers', function () {
     DB::shouldReceive('connection')->andReturn($connection);
     DB::shouldReceive('getDefaultConnection')->andReturn('sqlite');
 
-    DB::shouldNotReceive('statement');
+    DB::shouldReceive('statement')->never();
 
     VectorSchema::createHnswIndex('test_table', 'embedding');
 });
@@ -79,7 +79,7 @@ it('does not drop hnsw index on other drivers', function () {
     DB::shouldReceive('connection')->andReturn($connection);
     DB::shouldReceive('getDefaultConnection')->andReturn('sqlite');
 
-    DB::shouldNotReceive('statement');
+    DB::shouldReceive('statement')->never();
 
     VectorSchema::dropHnswIndex('test_table', 'embedding');
 });

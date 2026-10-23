@@ -5,32 +5,22 @@ declare(strict_types=1);
 namespace IllumaLaw\VectorSchema\Tests;
 
 use IllumaLaw\VectorSchema\VectorSchemaServiceProvider;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Events\ConnectionEstablished;
 use Illuminate\Support\Facades\Event;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'IllumaLaw\\VectorSchema\\Database\\Factories\\'.class_basename($modelName).'Factory'
-        );
-    }
-
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
         return [
             VectorSchemaServiceProvider::class,
         ];
     }
 
-    public function getEnvironmentSetUp($app)
+    public function getEnvironmentSetUp($app): void
     {
-        $database = env('DB_CONNECTION', 'testing');
+        $database = $this->environmentValue('DB_CONNECTION', 'testing');
         config()->set('database.default', $database);
 
         config()->set('database.connections.mysql', [
@@ -63,11 +53,11 @@ class TestCase extends Orchestra
 
         config()->set('database.connections.pgsql', [
             'driver' => 'pgsql',
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'testing'),
-            'username' => env('DB_USERNAME', 'postgres'),
-            'password' => env('DB_PASSWORD', 'password'),
+            'host' => $this->environmentValue('DB_HOST', '127.0.0.1'),
+            'port' => $this->environmentValue('DB_PORT', '5432'),
+            'database' => $this->environmentValue('DB_DATABASE', 'testing'),
+            'username' => $this->environmentValue('DB_USERNAME', 'postgres'),
+            'password' => $this->environmentValue('DB_PASSWORD', 'password'),
             'charset' => 'utf8',
             'prefix' => '',
             'schema' => 'public',
@@ -95,5 +85,12 @@ class TestCase extends Orchestra
                 //
             }
         });
+    }
+
+    private function environmentValue(string $key, string $default): string
+    {
+        $value = getenv($key);
+
+        return is_string($value) && $value !== '' ? $value : $default;
     }
 }

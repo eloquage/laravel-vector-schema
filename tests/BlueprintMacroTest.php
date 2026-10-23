@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Schema\ColumnDefinition;
 use Illuminate\Database\Schema\Grammars\PostgresGrammar;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -11,12 +12,14 @@ use Illuminate\Support\Facades\Schema;
 use Mockery\MockInterface;
 
 it('registers the vectorColumn macro on blueprint', function () {
-    /** @var mixed $blueprintClass */
-    $blueprintClass = Blueprint::class;
-    expect($blueprintClass::hasMacro('vectorColumn'))->toBe(true);
+    expect(Blueprint::hasMacro('vectorColumn'))->toBeTrue();
 });
 
 it('can create a vector column in a migration on sqlite', function () {
+    Config::set('database.default', 'sqlite');
+    Config::set('database.connections.sqlite.database', ':memory:');
+    DB::purge('sqlite');
+
     Schema::create('test_vectors_sqlite', function (Blueprint $table) {
         $table->id();
         $table->vectorColumn('embedding', 1536);
@@ -39,8 +42,12 @@ it('uses vectorWithDimensions type for pgsql, mysql, mariadb, sqlsrv', function 
     /** @var mixed $column */
     $column = $blueprint->vectorColumn('embedding', 1536);
 
-    expect($column->type)->toBe('vectorWithDimensions');
-    expect($column->dimensions)->toBe(1536);
+    if (! $column instanceof ColumnDefinition) {
+        throw new RuntimeException('The macro must return a column definition.');
+    }
+
+    expect($column->get('type') === 'vectorWithDimensions')->toBeTrue();
+    expect($column->get('dimensions') === 1536)->toBeTrue();
 })->with(['pgsql', 'mysql', 'mariadb', 'sqlsrv']);
 
 it('uses vector type for singlestore', function () {
@@ -60,18 +67,30 @@ it('uses vector type for singlestore', function () {
     /** @var mixed $column */
     $column = $blueprint->vectorColumn('embedding', 1536);
 
-    expect($column->type)->toBe('vector');
-    expect($column->length)->toBe(1536);
+    if (! $column instanceof ColumnDefinition) {
+        throw new RuntimeException('The macro must return a column definition.');
+    }
+
+    expect($column->get('type') === 'vector')->toBeTrue();
+    expect($column->get('length') === 1536)->toBeTrue();
 });
 
 it('can call hnswIndex macro', function () {
+    if (Schema::hasTable('test_hnsw')) {
+        Schema::drop('test_hnsw');
+    }
+
     Schema::create('test_hnsw', function (Blueprint $table) {
         $table->id();
         $table->vectorColumn('embedding', 3);
+    });
+
+    // HNSW indexes are separate PostgreSQL statements and require the table to exist first.
+    Schema::table('test_hnsw', function (Blueprint $table) {
         $table->hnswIndex('embedding');
     });
 
-    expect(true)->toBe(true);
+    expect(Schema::hasTable('test_hnsw'))->toBeTrue();
 });
 
 it('can call dropHnswIndex macro', function () {

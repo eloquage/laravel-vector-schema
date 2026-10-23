@@ -2,15 +2,7 @@
 
 declare(strict_types=1);
 
-use Illuminate\Database\Connection;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Database\Query\Expression;
-use Illuminate\Database\Query\Grammars\Grammar;
-use Illuminate\Database\Query\Grammars\MySqlGrammar;
-use Illuminate\Database\Query\Grammars\PostgresGrammar;
-use Illuminate\Database\Query\Grammars\SQLiteGrammar;
-use Illuminate\Database\Query\Grammars\SqlServerGrammar;
-use Illuminate\Database\Query\Processors\Processor;
+use IllumaLaw\VectorSchema\Tests\Support\VectorTestQueryBuilder;
 
 dataset('drivers', [
     'sqlite',
@@ -21,27 +13,9 @@ dataset('drivers', [
     'pgsql',
 ]);
 
-function getMockBuilder(string $driver)
+function getMockBuilder(string $driver): VectorTestQueryBuilder
 {
-    $connection = Mockery::mock(Connection::class);
-    $connection->shouldReceive('getDriverName')->andReturn($driver);
-    $connection->shouldReceive('getTablePrefix')->andReturn('');
-    $connection->shouldReceive('raw')->andReturnUsing(function ($value) {
-        return new Expression((string) (is_scalar($value) ? $value : ''));
-    });
-    $connection->shouldReceive('addBinding');
-    $grammar = match ($driver) {
-        'sqlite' => new SQLiteGrammar($connection),
-        'mysql', 'mariadb', 'singlestore' => new MySqlGrammar($connection),
-        'sqlsrv' => new SqlServerGrammar($connection),
-        'pgsql' => new PostgresGrammar($connection),
-        default => new Grammar($connection),
-    };
-
-    $connection->shouldReceive('getQueryGrammar')->andReturn($grammar);
-    $connection->shouldReceive('getPostProcessor')->andReturn(Mockery::mock(Processor::class));
-
-    return new Builder($connection, $grammar);
+    return VectorTestQueryBuilder::forDriver($driver);
 }
 
 it('generates correct distance SQL for each driver', function (string $driver) {

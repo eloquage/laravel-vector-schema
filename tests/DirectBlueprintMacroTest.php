@@ -2,27 +2,39 @@
 
 declare(strict_types=1);
 
-use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Database\Schema\Grammars\SQLiteGrammar;
+use Illuminate\Support\Facades\Schema;
 
 it('calls createHnswIndex from macro', function () {
-    $connection = Mockery::mock(Connection::class);
-    $connection->shouldReceive('getSchemaGrammar')->andReturn(new SQLiteGrammar($connection));
+    if (Schema::hasTable('direct_macro_table')) {
+        Schema::drop('direct_macro_table');
+    }
 
-    $blueprint = new Blueprint($connection, 'test_table');
+    Schema::create('direct_macro_table', function (Blueprint $table) {
+        $table->id();
+        $table->vectorColumn('embedding', 3);
+    });
 
-    $blueprint->hnswIndex('embedding');
+    Schema::table('direct_macro_table', function (Blueprint $table) {
+        $table->hnswIndex('embedding');
+    });
 
-    expect(true)->toBeTrue();
+    expect(Schema::hasTable('direct_macro_table'))->toBeTrue();
 });
 
 it('calls dropHnswIndex from macro', function () {
-    $connection = Mockery::mock(Connection::class);
-    $connection->shouldReceive('getSchemaGrammar')->andReturn(new SQLiteGrammar($connection));
+    if (Schema::hasTable('direct_macro_table')) {
+        Schema::drop('direct_macro_table');
+    }
 
-    $blueprint = new Blueprint($connection, 'test_table');
-    $blueprint->dropHnswIndex('embedding');
+    Schema::create('direct_macro_table', function (Blueprint $table) {
+        $table->id();
+        $table->vectorColumn('embedding', 3);
+    });
 
-    expect(true)->toBeTrue();
+    Schema::table('direct_macro_table', function (Blueprint $table) {
+        $table->dropHnswIndex('embedding');
+    });
+
+    expect(Schema::hasTable('direct_macro_table'))->toBeTrue();
 });
