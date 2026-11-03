@@ -2,7 +2,7 @@
     "name": "eloquage/laravel-vector-schema",
     "description": "Portable Laravel vector schema, casts, and cosine similarity queries.",
     "keywords": [
-        "illuma-law",
+        "eloquage",
         "laravel",
         "laravel-vector-schema"
     ],
@@ -10,8 +10,7 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "illuma-law",
-            "email": "support@illuma.law",
+            "name": "Eloquage",
             "role": "Developer"
         }
     ],
