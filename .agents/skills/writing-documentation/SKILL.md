@@ -7,7 +7,7 @@ metadata:
 
 # Writing and documentation
 
-Write documentation for `illuma-law/laravel-vector-schema` (Portable Eloquent casts and Blueprint schema macros for pgvector and sqlite-vec.) that lets the intended reader complete a concrete task.
+Write documentation for `eloquage/laravel-vector-schema` (Portable Eloquent casts and Blueprint schema macros for pgvector and sqlite-vec.) that lets the intended reader complete a concrete task.
 
 ## Source and structure
 

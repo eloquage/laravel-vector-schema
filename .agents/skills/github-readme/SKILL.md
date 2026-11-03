@@ -7,7 +7,7 @@ metadata:
 
 # GitHub README
 
-For `illuma-law/laravel-vector-schema` (Portable Eloquent casts and Blueprint schema macros for pgvector and sqlite-vec.), make the README useful to a developer deciding whether to install the package and then trying it in a real application.
+For `eloquage/laravel-vector-schema` (Portable Eloquent casts and Blueprint schema macros for pgvector and sqlite-vec.), make the README useful to a developer deciding whether to install the package and then trying it in a real application.
 
 ## Ground every claim
 
