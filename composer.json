@@ -1,5 +1,5 @@
 {
-    "name": "illuma-law/laravel-vector-schema",
+    "name": "eloquage/laravel-vector-schema",
     "description": "Portable Laravel vector schema, casts, and cosine similarity queries.",
     "keywords": [
         "illuma-law",

@@ -1,7 +1,7 @@
 # Laravel Vector Schema
 
 [![Tests](https://github.com/eloquage/laravel-vector-schema/actions/workflows/run-tests.yml/badge.svg)](https://github.com/eloquage/laravel-vector-schema/actions)
-[![Latest Stable Version](https://img.shields.io/packagist/v/illuma-law/laravel-vector-schema?label=Version)](https://packagist.org/packages/illuma-law/laravel-vector-schema)
+[![Latest Stable Version](https://img.shields.io/packagist/v/eloquage/laravel-vector-schema?label=Version)](https://packagist.org/packages/eloquage/laravel-vector-schema)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
 
 ![Colored vector embeddings flowing through a schema-aware database query](docs/images/vector-schema-banner.png)
@@ -28,7 +28,7 @@ CI exercises vector columns and queries on SQLite, PostgreSQL, and MariaDB. Its 
 ## Install
 
 ```bash
-composer require illuma-law/laravel-vector-schema
+composer require eloquage/laravel-vector-schema
 ```
 
 Laravel discovers the service provider automatically. It registers the `vectorColumn`, `hnswIndex`, and `dropHnswIndex` schema macros and the vector query macros.

@@ -7,7 +7,7 @@ metadata:
 
 # Laravel package development
 
-Use this skill when changing this Composer package: `illuma-law/laravel-vector-schema` — Portable Eloquent casts and Blueprint schema macros for pgvector and sqlite-vec.
+Use this skill when changing this Composer package: `eloquage/laravel-vector-schema` — Portable Eloquent casts and Blueprint schema macros for pgvector and sqlite-vec.
 
 ## Package context
 

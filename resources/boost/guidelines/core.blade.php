@@ -1,4 +1,4 @@
-# illuma-law/laravel-vector-schema
+# eloquage/laravel-vector-schema
 
 Portable vector columns and macros for Laravel. Supports PostgreSQL (pgvector), MySQL (HeatWave), MariaDB, SQL Server, SingleStore, and SQLite (sqlite-vec).
 
